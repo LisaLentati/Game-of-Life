@@ -3,6 +3,9 @@ from tensorflow import keras
 
 
 class CyclicPadding2D(keras.layers.Layer):
+    """
+    It adds cyclic padding around the two last dimensions of the tensor. No weights to train.
+    """
 
     def __init__(self,):
         super(CyclicPadding2D, self).__init__()
@@ -13,6 +16,13 @@ class CyclicPadding2D(keras.layers.Layer):
         super(CyclicPadding2D, self).build(input_shape)
 
     def call(self, inputs):
+        """
+        Args:
+            inputs: a 3D tensor of shape (batch_size, d1, d2)
+
+        Returns:
+            The padded 3D tensor of shape (batch_size, d1+2, d+2)
+        """
 
         self.grid[:,1:-1, 1:-1].assign(inputs)
         self.grid[:,0,0].assign(inputs[:,-1,-1])
@@ -27,11 +37,14 @@ class CyclicPadding2D(keras.layers.Layer):
         return self.grid
 
 class DenseSymmetric2D(tf.keras.layers.Layer):
+    """
+    It creates a dense layer where the weight matrix is symmetric along the two axes.
+    """
 
     def __init__(self,):
         super(DenseSymmetric2D, self).__init__()
 
-    def __call__(self, input_shape):
+    def build(self, input_shape):
         
         w1 = tf.constant(tf.keras.initializers.RandomUniform(minval=0.01, maxval=0.09), 
                          shape=(input_shape[0], input_shape[1], input_shape[2]))
@@ -44,23 +57,13 @@ class DenseSymmetric2D(tf.keras.layers.Layer):
         w2 = tf.transpose(w1)
         self.W = w1 + w2
 
+    def call(self, x):
+        # TODO: to do it all
     
-        def __init__(self,):
-
-    def build(self, input_shape):
-        self.grid = tf.Variable(tf.zeros(shape=(input_shape[0], input_shape[1]+2, input_shape[2]+2), dtype=tf.float32), 
-                        trainable=False, validate_shape=True)
-        super(CyclicPadding2D, self).build(input_shape)  
-
-    def call(self, inputs):
-        
-        self.grid[:,1:-1, 1:-1].assign(inputs)
-        self.grid[:,0,0].assign(inputs[:,-1,-1])
-        self.grid[:,0,-1].assign( inputs[:,-1,0])
-        self.grid[:,-1,0].assign(inputs[:,0,-1])
-        self.grid[:,-1,-1].assign(inputs[:,0,0])
-
 class LocallyDense(keras.layers.Layer):
+    """
+    Warning: to be used after an instance of CyclicPadding2D.
+    """
     
     def __init__(self, ):
         super(LocallyDense, self).__init__()
@@ -81,6 +84,14 @@ class LocallyDense(keras.layers.Layer):
         self.b = self.add_weight(name="b", shape=(m,n), initializer='zeros', trainable=True)
 
     def call(self, padded_input):
+        """
+        Args:
+            padded_input (3D tensor): A tensor with shape (batch_size, d1, d2). A list of grids with cyclic padding.
+
+        Returns:
+            3D tensor of shape (batch_size, d1-2, d2-2). Weighted sum of the elements in the 3x3 grid around each cell, 
+            with bias.
+        """
         p00 = padded_input[:,:-2,:-2]
         p01 = padded_input[:,:-2,1:-1]
         p02 = padded_input[:,:-2,2:]
@@ -91,17 +102,20 @@ class LocallyDense(keras.layers.Layer):
         p21 = padded_input[:,2:,1:-1]
         p22 = padded_input[:,2:,2:]
         
-        return tf.matmul(p00, self.w00) + tf.matmul(p01, self.w01) + tf.matmul(p02, self.w02) + 
-        tf.matmul(p10, self.w10) + tf.matmul(p11, self.w11) + tf.matmul(p12, self.w12) + 
-        tf.matmul(p20, self.w20) + tf.matmul(p21, self.w21) + tf.matmul(p22, self.w22) + self.b
+        return tf.matmul(p00, self.w00) + tf.matmul(p01, self.w01) + tf.matmul(p02, self.w02) + \
+                tf.matmul(p10, self.w10) + tf.matmul(p11, self.w11) + tf.matmul(p12, self.w12) + \
+                tf.matmul(p20, self.w20) + tf.matmul(p21, self.w21) + tf.matmul(p22, self.w22) + self.b
 
 class Conv2D(keras.layers.Layer):
-    
+    """
+    Just a function, no weights to train.
+    """
+    # TODO: check if I can just use tf.nn.conv2d in the model
+
     def __init__(self,kernel):
         super(Conv2D, self).__init__()
         self.kernel = kernel 
         
     def call(self, x):
-        print(x.shape)
         x = tf.nn.conv2d(x, self.kernel, strides=1, padding='VALID')
         return x

@@ -59,6 +59,7 @@ class DenseSymmetric2D(tf.keras.layers.Layer):
 
     def call(self, x):
         # TODO: to do it all
+        return
     
 class LocallyDense(keras.layers.Layer):
     """

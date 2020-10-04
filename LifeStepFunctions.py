@@ -15,7 +15,8 @@ def life_step_for_tensors(X):
 
     X = tf.reshape(X, (X.shape[0], X.shape[1], X.shape[2], 1))
     kernel = tf.ones(shape=(3,3,1,1))
-    X = tf.nn.conv2d(X, filters=kernel, padding='VALID')
+    X = tf.nn.conv2d(X, filters=kernel, strides=1, padding='VALID')
+    X = tf.reshape(X, (X.shape[0], X.shape[1], X.shape[2]))
     return X
 
 def life_step_for_tensors_cyclic(X):

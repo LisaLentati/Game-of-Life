@@ -3,7 +3,6 @@ import tensorflow as tf
 
 from LifeStepFunctions import life_step_for_arrays
 
-
 def generate_input(trials, grid_shape=(25,25), v_min=0.1, v_max=0.9, steps_before_generating_output=2):
     """ Generates random grids for the Game of Life. Each cell in the grid has probability p to be alive,
     where p is chosen uniformly between v_min and v_max. Only the non-zero grids are returned. 

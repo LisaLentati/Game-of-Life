@@ -2,4 +2,6 @@
 
 Project and README in progress...
 
-<https://www.kaggle.com/c/conways-reverse-game-of-life-2020>
+link of the project: <https://www.kaggle.com/c/conways-reverse-game-of-life-2020>
+
+most interesting part of the work: Models.ipynb and the functions called in this file

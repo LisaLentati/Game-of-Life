@@ -104,3 +104,25 @@ class GameOfLifeModel(tf.keras.models.Model):
         X = tf.reshape(X, shape=(-1,1,1))
         self.grid[:,-1:,-1:].assign(X)
         return self.grid
+
+
+class ContinuousGameOfLife3x3(tf.keras.layers.Layer):
+    
+    def __init__(self, ):
+        super(ContinuousGameOfLife3x3, self).__init__()
+
+    def build(self, input_shape):
+        self.k1 = tf.constant([[1,1,1],[1,0,1],[1,1,1]], dtype='float32')
+        self.k2 = tf.constant([[0,0,0],[0,1,0],[0,0,0]], dtype='float32')
+        super(ContinuousGameOfLife3x3, self).build(input_shape)
+        
+    def call(self, inputs):
+        cell = tf.tensordot(inputs, self.k2, axes=([1,2], [0,1]))
+        around_cell = tf.tensordot(inputs, self.k1, axes=([1,2], [0,1]))
+
+        x1 = tf.math.maximum(4-around_cell,0)
+        x2 = tf.math.maximum((around_cell + cell)-2,0)
+        x3 = tf.math.minimum(x1, x2)
+        x4 = tf.math.minimum(x3,1)
+
+        return tf.reshape(x4, shape=(-1,1,1))

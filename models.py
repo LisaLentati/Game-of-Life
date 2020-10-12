@@ -1,5 +1,6 @@
 import tensorflow as tf
 from tensorflow.python.training.tracking.data_structures import NoDependency
+import torch
 
 
 class GameOfLifeModel(tf.keras.models.Model):
@@ -126,3 +127,21 @@ class ContinuousGameOfLife3x3(tf.keras.layers.Layer):
         x4 = tf.math.minimum(x3,1)
 
         return tf.reshape(x4, shape=(-1,1,1))
+
+class ContinuousGameOfLife3x3Pytorch(torch.nn.Module):
+
+    def __init__(self):
+        super(ContinuousGameOfLife3x3Pytorch, self).__init__()
+        self.k1 = torch.Tensor([[1,1,1],[1,0,1],[1,1,1]])
+        self.k2 = torch.Tensor([[0,0,0],[0,1,0],[0,0,0]])
+        
+    def forward(self, x):
+        cell = torch.tensordot(x, self.k2, ([1,2], [0,1]))
+        around_cell = torch.tensordot(x, self.k1, ([1,2], [0,1]))
+
+        x1 = torch.max(4-around_cell,torch.zeros_like(cell))
+        x2 = torch.max((around_cell + cell)-2,torch.zeros_like(cell))
+        x3 = torch.min(x1, x2)
+        x4 = torch.min(x3,torch.ones_like(cell))
+
+        return torch.reshape(x4, shape=(-1,1,1))

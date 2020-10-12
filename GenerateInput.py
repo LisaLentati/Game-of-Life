@@ -3,7 +3,7 @@ import tensorflow as tf
 
 from LifeStepFunctions import life_step_for_arrays
 
-def generate_input(trials, grid_shape=(25,25), v_min=0.1, v_max=0.9, steps_before_generating_output=2):
+def generate_input(trials, grid_shape=(25,25), v_min=0.1, v_max=0.9, steps_before_generating_output=2, as_list=False):
     """ Generates random grids for the Game of Life. Each cell in the grid has probability p to be alive,
     where p is chosen uniformly between v_min and v_max. Only the non-zero grids are returned. 
 
@@ -33,7 +33,9 @@ def generate_input(trials, grid_shape=(25,25), v_min=0.1, v_max=0.9, steps_befor
             samples.append(grid)
             grid_1_step = life_step_for_arrays(grid)
             samples_1_step.append(grid_1_step)
-
+    if as_list:
+        return samples, samples_1_step
+        
     samples = tf.constant(np.array(samples).astype(float), dtype="float32")
     samples_1_step = tf.constant(np.array(samples_1_step).astype(float), dtype="float32")
 

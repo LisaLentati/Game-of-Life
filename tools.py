@@ -49,15 +49,15 @@ def life_step_for_tensors(X):
     X: 3D tensor of shape (batch_size, d1, d2).
     """
     pad = CyclicPadding2D()
-    X = pad(X)
-    X_4D = tf.reshape(X, (X.shape[0], X.shape[1], X.shape[2], 1))
+    X_padded = pad(X)
+    X_4D = tf.reshape(X_padded, (X_padded.shape[0], X_padded.shape[1], X_padded.shape[2], 1))
 
     kernel = tf.Variable(tf.ones(shape=(3,3,1,1)), dtype='float32')
     kernel[1,1,0,0].assign(0)
     
     neighbours_count_4D = tf.nn.conv2d(X_4D, filters=kernel, strides=1, padding='VALID')
-    neighbours_count_3D = tf.reshape(neighbours_count_4D, (neightbours_count_4D.shape[0], neightbours_count_4D.shape[1], 
-                                                     neightbours_count_4D.shape[2]))
+    neighbours_count_3D = tf.reshape(neighbours_count_4D, (neighbours_count_4D.shape[0], neighbours_count_4D.shape[1], 
+                                                     neighbours_count_4D.shape[2]))
     
     return tf.cast((neighbours_count_3D == 3) | (tf.cast(X, dtype=bool) & (neighbours_count_3D == 2)), dtype='float32')
 

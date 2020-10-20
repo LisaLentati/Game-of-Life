@@ -1,21 +1,16 @@
 import tensorflow as tf
-from tensorflow.python.training.tracking.data_structures import NoDependency
-import torch
-
+from tools import CyclicPadding2D
 
 class ContinuousGameOfLife(tf.keras.layers.Layer):
     
-    def __init__(self, ):
+    def __init__(self, game_function):
         super(ContinuousGameOfLife, self).__init__()
-        self.flat = tf.keras.layers.Flatten()
+        self.forward_game = game_function
+        
         self.add_padding = CyclicPadding2D()
 
-    def build(self, input_shape):
-        self.k1 = tf.constant([[1,1,1],[1,0,1],[1,1,1]], dtype='float32')
-        self.k1 = tf.reshape(self.k1, shape=(3,3,1,1))
-        self.k2 = tf.constant([[0,0,0],[0,1,0],[0,0,0]], dtype='float32')
-        self.k2 = tf.reshape(self.k2, shape=(3,3,1,1))
-        super(ContinuousGameOfLife, self).build(input_shape)
+        self.k1 = tf.constant([[1,1,1],[1,0,1],[1,1,1]], shape=(3,3,1,1), dtype='float32')
+        self.k2 = tf.constant([[0,0,0],[0,1,0],[0,0,0]], shape=(3,3,1,1), dtype='float32')    
         
     def call(self, inputs):
         batch_size, d1, d2 = inputs.shape
@@ -24,32 +19,36 @@ class ContinuousGameOfLife(tf.keras.layers.Layer):
         cell = tf.nn.conv2d(x, filters=self.k2, strides=1, padding='VALID')
         around_cell = tf.nn.conv2d(x, filters=self.k1, strides=1, padding='VALID')
 
-        x1 = tf.math.maximum(4-around_cell,0)
-        x2 = tf.math.maximum((around_cell + cell)-2,0)
-        x3 = tf.math.minimum(x1, x2)
-        x4 = tf.math.minimum(x3,1)
-
-        return tf.reshape(x4, shape=(batch_size,d1,d2))
-
-
-class ContinuousGameOfLife3x3(tf.keras.layers.Layer):
-    
-    def __init__(self, ):
-        super(ContinuousGameOfLife3x3, self).__init__()
-
-    def build(self, input_shape):
-        self.k1 = tf.constant([[1,1,1],[1,0,1],[1,1,1]], dtype='float32')
-        self.k2 = tf.constant([[0,0,0],[0,1,0],[0,0,0]], dtype='float32')
-        super(ContinuousGameOfLife3x3, self).build(input_shape)
+        xx = self.forward_game(cell, around_cell)
         
-    def call(self, inputs):
-        cell = tf.tensordot(inputs, self.k2, axes=([1,2], [0,1]))
-        around_cell = tf.tensordot(inputs, self.k1, axes=([1,2], [0,1]))
+        return tf.reshape(xx, shape=(batch_size,d1,d2))        
 
-        x1 = tf.math.maximum(4-around_cell,0)
-        x2 = tf.math.maximum((around_cell + cell)-2,0)
-        x3 = tf.math.minimum(x1, x2)
-        x4 = tf.math.minimum(x3,1)
 
-        return tf.reshape(x4, shape=(-1,1,1))
+class ContinuousReverseGame(tf.keras.models.Model):
+    
+    def __init__(self, game_function, min_v, max_v, grid_len):
+        super(ContinuousReverseGame, self).__init__()
+        self.forward_game = game_function
+        self.min_v = min_v
+        self.max_v = max_v
+        self.l = grid_len
+        self.k1 = tf.constant([[1,1,1],[1,0,1],[1,1,1]], shape=(3,3,1,1), dtype='float32')
+        self.k2 = tf.constant([[0,0,0],[0,1,0],[0,0,0]], shape=(3,3,1,1), dtype='float32')
 
+        self.input_img = tf.Variable(tf.random.uniform(shape=(1,self.l+2,self.l+2), minval=self.min_v, maxval=self.max_v), trainable=True, validate_shape=True) #constraint=tf.keras.constraints.min_max_norm(0,1))
+
+        
+    def call(self, target):
+        self.input_img[:,0,:].assign(self.input_img[:,-2,:])
+        self.input_img[:,-1,:].assign(self.input_img[:,1,:])
+        self.input_img[:,:,0].assign(self.input_img[:,:,-2])
+        self.input_img[:,:,-1].assign(self.input_img[:,:,1])
+
+            
+        input_img = tf.reshape(self.input_img, shape=(1, self.l+2, self.l+2, 1))
+        cell = tf.nn.conv2d(input_img, filters=self.k2, strides=1, padding='VALID')
+        around_cell = tf.nn.conv2d(input_img, filters=self.k1, strides=1, padding='VALID')
+
+        xx = self.forward_game(cell, around_cell)
+        xx = tf.reshape(xx, shape=(self.l,self.l))        
+        return xx

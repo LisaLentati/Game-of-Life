@@ -1,4 +1,4 @@
-## Conway's reverse game of life
+# Conway's reverse game of life
 Code created for the Kaggle competition Conway's reverse game of life.
 
 **Link of the competition**: <https://www.kaggle.com/c/conways-reverse-game-of-life-2020>
@@ -13,5 +13,11 @@ Code created for the Kaggle competition Conway's reverse game of life.
 
 
 In the jupyter notebooks we explore different ways to define _f_ and different ways to train the model.
+
+
+## Defining _f_
+In the Game of Life, the next state of a cell depends on:
+- the current state of the cell,
+- the current number of alive cells surrounding the cell we are considering.
 
 

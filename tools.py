@@ -38,7 +38,6 @@ class CyclicPadding2D(tf.keras.layers.Layer):
         return self.grid
 
 
-
 def life_step_for_arrays(X):
     neighbours_count = convolve2d(X, np.ones((3, 3)), mode='same', boundary='wrap') - X
     return (neighbours_count == 3) | (X & (neighbours_count == 2))
